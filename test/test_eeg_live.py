@@ -3,12 +3,16 @@ import time
 from datetime import datetime
 import influxdb_client
 from influxdb_client.client.write_api import SYNCHRONOUS, ASYNCHRONOUS
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 BUCKET = "eeg_data"
 ORG = "AurawaveData"
-TOKEN = "CaJbFl4L-knEgi69Wq0I-WyRj9J6ni3OZyybAuTkPnirsvnQFmKIoDxL7uwq3Yfxz1mUrcXkK5Voo90QaGlQ7w=="
+TOKEN = os.getenv('INFLUXDB_API_TOKEN')
 # Store the URL of your InfluxDB instance
-URL="http://localhost:8080"
+URL = os.getenv('INFLUXDB_URL')
 
 EEG = EEGExtract('test_dataset', '010')
 

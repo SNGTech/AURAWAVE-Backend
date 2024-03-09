@@ -17,7 +17,7 @@ class RecorderLive:
         self.ORG = "AurawaveData"
         TOKEN = os.getenv('INFLUXDB_API_TOKEN')
         # Store the URL of your InfluxDB instance
-        URL="http://localhost:8080" # CHANGE THIS TO your IPv4 Address of your Computer Server, port should match your InfluxDB port
+        URL = os.getenv('INFLUXDB_URL') # CHANGE THIS TO your IPv4 Address of your Computer Server, port should match your InfluxDB port
 
         self.client = influxdb_client.InfluxDBClient(url=URL, org=self.ORG, token=TOKEN)
         self.write_api = self.client.write_api(write_options=SYNCHRONOUS)
