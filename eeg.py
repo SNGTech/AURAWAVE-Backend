@@ -71,3 +71,30 @@ class EEG:
 
         print(df)
         return df
+
+    def get_split_freqbands_json(self):
+        freq_bands_json = {}
+        freq_bands = self.split_into_freq_bands(self.raw_data)
+        
+        freqband_arr = []
+        gfp_avg_arr = []
+        for band, gfp_avg in freq_bands:
+            freqband_arr.append(band)
+            gfp_avg_arr.append(gfp_avg)
+            freq_bands_json[band] = gfp_avg
+        
+        freq_bands_json['min_band'] = freqband_arr[np.argmin(gfp_avg_arr)]
+        freq_bands_json['max_band'] = freqband_arr[np.argmax(gfp_avg_arr)]
+        
+        return freq_bands_json
+        
+    def get_metadata(self):
+        metadata = {
+            'n_pts_recorded': len(self.raw_data[0]),
+            'sampling_rate': self.sfreq,
+            'high_pass_freq': 1,
+            'low_pass_freq': 100,
+            'adc_vref': 5.08
+        }
+
+        return metadata
