@@ -20,12 +20,16 @@ predictor = ActiveLevelPredictor()
 # TEMPORARY STORAGE SOLUTION
 music_dict = {}
 
-
-def predict(input_eeg_data, input_sfreq, input_profile_info):
+def predict_level_only(input_eeg_data, input_sfreq, input_profile_info):
     eeg_dataset = EEG(input_eeg_data, input_sfreq, input_profile_info)
     prepared_data = eeg_dataset.prepare_data()
 
     active_level_pred = predictor.predict(prepared_data)
+
+    return active_level_pred
+
+def predict(input_eeg_data, input_sfreq, input_profile_info):
+    active_level_pred = predict_level_only(input_eeg_data, input_sfreq, input_profile_info)
 
     music_id = randint(0, 2)
 
@@ -38,7 +42,6 @@ def predict(input_eeg_data, input_sfreq, input_profile_info):
     )
 
     return pred
-
 
 @app.route("/ping", methods=["GET"])
 def ping():
@@ -80,14 +83,15 @@ def session_summary():
         summary["info"]["timestamp"] = pre["session_start_timestamp"]
         summary["info"]['duration'] = content["duration"]
         summary["info"]['music_suggested'] = content["music_suggested"]
-        summary["info"]['active_level'] = content["active_level"]
 
         pre_eeg = EEG(pre["eeg_data"], pre["sample_freq"], pre["profile_info"])
         summary["pre"]['eeg_summary'] = pre_eeg.get_split_freqbands_json()
+        summary["pre"]['eeg_summary']['dominant_level'] = content["pre_active_level"]
         summary["pre"]['metadata'] = pre_eeg.get_metadata()
 
         post_eeg = EEG(post["eeg_data"], post["sample_freq"], post["profile_info"])
         summary["post"]['eeg_summary'] = post_eeg.get_split_freqbands_json()
+        summary["post"]['eeg_summary']['dominant_level'] = content["post_active_level"]
         summary["post"]['metadata'] = post_eeg.get_metadata()
 
         return jsonify(summary), 200
@@ -101,7 +105,6 @@ def model():
             return abort(404)
 
         content = request.get_json()
-        print(content)
         eeg_data = content["eeg_data"]
         sfreq = content["sample_freq"]
         profile_info = content["profile_info"]
@@ -109,6 +112,16 @@ def model():
 
         return res, 200
 
+@app.route("/predict_level_only", methods=["POST"])
+def model_level_only():
+    if request.method == "POST":
+        content = request.get_json()
+        eeg_data = content["eeg_data"]
+        sfreq = content["sample_freq"]
+        profile_info = content["profile_info"]
+        res = predict_level_only(eeg_data, sfreq, profile_info)
+
+        return jsonify({"active_level": res}), 200
 
 @app.route("/get_music_list", methods=["GET"])
 def get_music_list():

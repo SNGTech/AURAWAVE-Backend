@@ -17,7 +17,7 @@ URL = os.getenv('INFLUXDB_URL')
 EEG = EEGExtract('test_dataset', '010')
 
 # In seconds
-start, stop = 0, 100
+start, stop = 0, 200
 
 data = EEG.extract('Fp1', start, stop)
 
@@ -26,7 +26,7 @@ def influx_main():
     write_eeg_data(client)
 
 def write_eeg_data(client: influxdb_client.InfluxDBClient):
-    write_api = client.write_api(write_options=ASYNCHRONOUS)
+    write_api = client.write_api(write_options=SYNCHRONOUS)
 
     for i, t in enumerate(data[1]):
         point = [
