@@ -9,35 +9,35 @@ from flask import Flask, abort, jsonify, redirect, request, url_for
 from sklearn.pipeline import Pipeline
 
 from eeg import EEG
-from predictor import ActiveLevelPredictor
+from predictor import EmotionPredictor
 from record import Recorder
 from record_live import RecorderLive
 
 app = Flask(__name__)
 
-predictor = ActiveLevelPredictor()
+predictor = EmotionPredictor()
 
 # TEMPORARY STORAGE SOLUTION
 music_dict = {}
 
-def predict_level_only(input_eeg_data, input_sfreq, input_profile_info):
+def predict_emotion_only(input_eeg_data, input_sfreq, input_profile_info):
     eeg_dataset = EEG(input_eeg_data, input_sfreq, input_profile_info)
     prepared_data = eeg_dataset.prepare_data()
 
-    active_level_pred = predictor.predict(prepared_data)
+    emotion_pred = predictor.predict(prepared_data)
 
-    return active_level_pred
+    return emotion_pred
 
 def predict(input_eeg_data, input_sfreq, input_profile_info):
-    active_level_pred = predict_level_only(input_eeg_data, input_sfreq, input_profile_info)
+    emotion_pred = predict_emotion_only(input_eeg_data, input_sfreq, input_profile_info)
 
     music_id = randint(0, 2)
 
     pred = jsonify(
         {
-            "active_level": active_level_pred,
-            "music_name": music_dict[active_level_pred][music_id]["music_name"],
-            "thumbnail_url": music_dict[active_level_pred][music_id]["thumbnail_url"],
+            "emotion": emotion_pred,
+            "music_name": music_dict[emotion_pred][music_id]["music_name"],
+            "thumbnail_url": music_dict[emotion_pred][music_id]["thumbnail_url"],
         }
     )
 
@@ -86,12 +86,12 @@ def session_summary():
 
         pre_eeg = EEG(pre["eeg_data"], pre["sample_freq"], pre["profile_info"])
         summary["pre"]['eeg_summary'] = pre_eeg.get_split_freqbands_json()
-        summary["pre"]['eeg_summary']['dominant_level'] = content["pre_active_level"]
+        summary["pre"]['eeg_summary']['dominant_emotion'] = content["pre_emotion"]
         summary["pre"]['metadata'] = pre_eeg.get_metadata()
 
         post_eeg = EEG(post["eeg_data"], post["sample_freq"], post["profile_info"])
         summary["post"]['eeg_summary'] = post_eeg.get_split_freqbands_json()
-        summary["post"]['eeg_summary']['dominant_level'] = content["post_active_level"]
+        summary["post"]['eeg_summary']['dominant_emotion'] = content["post_emotion"]
         summary["post"]['metadata'] = post_eeg.get_metadata()
 
         return jsonify(summary), 200
@@ -112,28 +112,28 @@ def model():
 
         return res, 200
 
-@app.route("/predict_level_only", methods=["POST"])
-def model_level_only():
+@app.route("/predict_emotion_only", methods=["POST"])
+def model_emotion_only():
     if request.method == "POST":
         content = request.get_json()
         eeg_data = content["eeg_data"]
         sfreq = content["sample_freq"]
         profile_info = content["profile_info"]
-        res = predict_level_only(eeg_data, sfreq, profile_info)
+        res = predict_emotion_only(eeg_data, sfreq, profile_info)
 
-        return jsonify({"active_level": res}), 200
+        return jsonify({"emotion": res}), 200
 
 @app.route("/get_music_list", methods=["GET"])
 def get_music_list():
-    for level in predictor.labels:
-        music_dict[level] = [
+    for emotion in predictor.labels:
+        music_dict[emotion] = [
             {
                 "music_name": os.path.basename(x).replace(".mp3", ""),
                 "thumbnail_url": os.path.basename(y),
             }
             for x, y in zip(
-                glob.glob(f"./static/sample_music/{level}/*.mp3"),
-                glob.glob(f"./static/sample_music/{level}/thumbnails/*.*"),
+                glob.glob(f"./static/sample_music/{emotion}/*.mp3"),
+                glob.glob(f"./static/sample_music/{emotion}/thumbnails/*.*"),
             )
         ]
 
